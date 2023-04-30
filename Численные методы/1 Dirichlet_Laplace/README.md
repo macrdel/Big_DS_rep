@@ -4,3 +4,4 @@
 метод сопряженных градиентов (Conjugate gradient, CG).
 Приведено сравнение эффективности методов.
 Все подробности в отчете - файл с расширением `.pdf`.
+![](https://github.com/macrdel/Big_DS_rep/blob/main/%D0%A7%D0%B8%D1%81%D0%BB%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D1%8B/1%20Dirichlet_Laplace/problem.jpg)
