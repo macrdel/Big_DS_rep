@@ -1,0 +1,444 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script>function neighbourhoodHighlight(params) {
+  // console.log("in nieghbourhoodhighlight");
+  allNodes = nodes.get({ returnType: "Object" });
+  // originalNodes = JSON.parse(JSON.stringify(allNodes));
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    highlightActive = true;
+    var i, j;
+    var selectedNode = params.nodes[0];
+    var degrees = 2;
+
+    // mark all nodes as hard to read.
+    for (let nodeId in allNodes) {
+      // nodeColors[nodeId] = allNodes[nodeId].color;
+      allNodes[nodeId].color = "rgba(200,200,200,0.5)";
+      if (allNodes[nodeId].hiddenLabel === undefined) {
+        allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+    var connectedNodes = network.getConnectedNodes(selectedNode);
+    var allConnectedNodes = [];
+
+    // get the second degree nodes
+    for (i = 1; i < degrees; i++) {
+      for (j = 0; j < connectedNodes.length; j++) {
+        allConnectedNodes = allConnectedNodes.concat(
+          network.getConnectedNodes(connectedNodes[j])
+        );
+      }
+    }
+
+    // all second degree nodes get a different color and their label back
+    for (i = 0; i < allConnectedNodes.length; i++) {
+      // allNodes[allConnectedNodes[i]].color = "pink";
+      allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
+      if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[allConnectedNodes[i]].label =
+          allNodes[allConnectedNodes[i]].hiddenLabel;
+        allNodes[allConnectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // all first degree nodes get their own color and their label back
+    for (i = 0; i < connectedNodes.length; i++) {
+      // allNodes[connectedNodes[i]].color = undefined;
+      allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
+      if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
+        allNodes[connectedNodes[i]].label =
+          allNodes[connectedNodes[i]].hiddenLabel;
+        allNodes[connectedNodes[i]].hiddenLabel = undefined;
+      }
+    }
+
+    // the main node gets its own color and its label back.
+    // allNodes[selectedNode].color = undefined;
+    allNodes[selectedNode].color = nodeColors[selectedNode];
+    if (allNodes[selectedNode].hiddenLabel !== undefined) {
+      allNodes[selectedNode].label = allNodes[selectedNode].hiddenLabel;
+      allNodes[selectedNode].hiddenLabel = undefined;
+    }
+  } else if (highlightActive === true) {
+    // console.log("highlightActive was true");
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      // allNodes[nodeId].color = "purple";
+      allNodes[nodeId].color = nodeColors[nodeId];
+      // delete allNodes[nodeId].color;
+      if (allNodes[nodeId].hiddenLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
+        allNodes[nodeId].hiddenLabel = undefined;
+      }
+    }
+    highlightActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    // console.log("Nothing was selected");
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        // console.log(allNodes[nodeId]);
+        // allNodes[nodeId].color = {};
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function filterHighlight(params) {
+  allNodes = nodes.get({ returnType: "Object" });
+  // if something is selected:
+  if (params.nodes.length > 0) {
+    filterActive = true;
+    let selectedNodes = params.nodes;
+
+    // hiding all nodes and saving the label
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = true;
+      if (allNodes[nodeId].savedLabel === undefined) {
+        allNodes[nodeId].savedLabel = allNodes[nodeId].label;
+        allNodes[nodeId].label = undefined;
+      }
+    }
+
+    for (let i=0; i < selectedNodes.length; i++) {
+      allNodes[selectedNodes[i]].hidden = false;
+      if (allNodes[selectedNodes[i]].savedLabel !== undefined) {
+        allNodes[selectedNodes[i]].label = allNodes[selectedNodes[i]].savedLabel;
+        allNodes[selectedNodes[i]].savedLabel = undefined;
+      }
+    }
+
+  } else if (filterActive === true) {
+    // reset all nodes
+    for (let nodeId in allNodes) {
+      allNodes[nodeId].hidden = false;
+      if (allNodes[nodeId].savedLabel !== undefined) {
+        allNodes[nodeId].label = allNodes[nodeId].savedLabel;
+        allNodes[nodeId].savedLabel = undefined;
+      }
+    }
+    filterActive = false;
+  }
+
+  // transform the object into an array
+  var updateArray = [];
+  if (params.nodes.length > 0) {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  } else {
+    for (let nodeId in allNodes) {
+      if (allNodes.hasOwnProperty(nodeId)) {
+        updateArray.push(allNodes[nodeId]);
+      }
+    }
+    nodes.update(updateArray);
+  }
+}
+
+function selectNode(nodes) {
+  network.selectNodes(nodes);
+  neighbourhoodHighlight({ nodes: nodes });
+  return nodes;
+}
+
+function selectNodes(nodes) {
+  network.selectNodes(nodes);
+  filterHighlight({nodes: nodes});
+  return nodes;
+}
+
+function highlightFilter(filter) {
+  let selectedNodes = []
+  let selectedProp = filter['property']
+  if (filter['item'] === 'node') {
+    let allNodes = nodes.get({ returnType: "Object" });
+    for (let nodeId in allNodes) {
+      if (allNodes[nodeId][selectedProp] && filter['value'].includes((allNodes[nodeId][selectedProp]).toString())) {
+        selectedNodes.push(nodeId)
+      }
+    }
+  }
+  else if (filter['item'] === 'edge'){
+    let allEdges = edges.get({returnType: 'object'});
+    // check if the selected property exists for selected edge and select the nodes connected to the edge
+    for (let edge in allEdges) {
+      if (allEdges[edge][selectedProp] && filter['value'].includes((allEdges[edge][selectedProp]).toString())) {
+        selectedNodes.push(allEdges[edge]['from'])
+        selectedNodes.push(allEdges[edge]['to'])
+      }
+    }
+  }
+  selectNodes(selectedNodes)
+}</script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+            
+            
+            
+            
+            
+
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 1400px;
+                 height: 1000px;
+                 background-color: #222222;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+             #loadingBar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width: 1400px;
+                 height: 1000px;
+                 background-color:rgba(200,200,200,0.8);
+                 -webkit-transition: all 0.5s ease;
+                 -moz-transition: all 0.5s ease;
+                 -ms-transition: all 0.5s ease;
+                 -o-transition: all 0.5s ease;
+                 transition: all 0.5s ease;
+                 opacity:1;
+             }
+
+             #bar {
+                 position:absolute;
+                 top:0px;
+                 left:0px;
+                 width:20px;
+                 height:20px;
+                 margin:auto auto auto auto;
+                 border-radius:11px;
+                 border:2px solid rgba(30,30,30,0.05);
+                 background: rgb(0, 173, 246); /* Old browsers */
+                 box-shadow: 2px 0px 4px rgba(0,0,0,0.4);
+             }
+
+             #border {
+                 position:absolute;
+                 top:10px;
+                 left:10px;
+                 width:500px;
+                 height:23px;
+                 margin:auto auto auto auto;
+                 box-shadow: 0px 0px 4px rgba(0,0,0,0.2);
+                 border-radius:10px;
+             }
+
+             #text {
+                 position:absolute;
+                 top:8px;
+                 left:530px;
+                 width:30px;
+                 height:50px;
+                 margin:auto auto auto auto;
+                 font-size:22px;
+                 color: #000000;
+             }
+
+             div.outerBorder {
+                 position:relative;
+                 top:400px;
+                 width:600px;
+                 height:44px;
+                 margin:auto auto auto auto;
+                 border:8px solid rgba(0,0,0,0.1);
+                 background: rgb(252,252,252); /* Old browsers */
+                 background: -moz-linear-gradient(top,  rgba(252,252,252,1) 0%, rgba(237,237,237,1) 100%); /* FF3.6+ */
+                 background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(252,252,252,1)), color-stop(100%,rgba(237,237,237,1))); /* Chrome,Safari4+ */
+                 background: -webkit-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Chrome10+,Safari5.1+ */
+                 background: -o-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* Opera 11.10+ */
+                 background: -ms-linear-gradient(top,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* IE10+ */
+                 background: linear-gradient(to bottom,  rgba(252,252,252,1) 0%,rgba(237,237,237,1) 100%); /* W3C */
+                 filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfcfc', endColorstr='#ededed',GradientType=0 ); /* IE6-9 */
+                 border-radius:72px;
+                 box-shadow: 0px 0px 10px rgba(0,0,0,0.2);
+             }
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+            <div id="loadingBar">
+              <div class="outerBorder">
+                <div id="text">0%</div>
+                <div id="border">
+                  <div id="bar"></div>
+                </div>
+              </div>
+            </div>
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "font": {"color": "white"}, "id": "Alabin", "label": "Alabin", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Stiva", "label": "Stiva", "shape": "dot", "size": 18}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Anna", "label": "Anna", "shape": "dot", "size": 40}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Dolly", "label": "Dolly", "shape": "dot", "size": 18}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Kitty", "label": "Kitty", "shape": "dot", "size": 33}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Vronsky", "label": "Vronsky", "shape": "dot", "size": 44}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Krivin", "label": "Krivin", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Levin", "label": "Levin", "shape": "dot", "size": 52}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Laska", "label": "Laska", "shape": "dot", "size": 5}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Ryabinin", "label": "Ryabinin", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Grisha", "label": "Grisha", "shape": "dot", "size": 11}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Varenka", "label": "Varenka", "shape": "dot", "size": 13}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Veslovsky", "label": "Veslovsky", "shape": "dot", "size": 13}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Masha", "label": "Masha", "shape": "dot", "size": 11}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Katerina Pavlovna", "label": "Katerina Pavlovna", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Varvara", "label": "Varvara", "shape": "dot", "size": 8}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Arseny", "label": "Arseny", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Yashvin", "label": "Yashvin", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mitya", "label": "Mitya", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Tanya", "label": "Tanya", "shape": "dot", "size": 11}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Lily", "label": "Lily", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Brownie", "label": "Brownie", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Miss Hoole", "label": "Miss Hoole", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Seryozha", "label": "Seryozha", "shape": "dot", "size": 13}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Katavasov", "label": "Katavasov", "shape": "dot", "size": 7}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Karenin", "label": "Karenin", "shape": "dot", "size": 12}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Annushka", "label": "Annushka", "shape": "dot", "size": 5}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Pravdin", "label": "Pravdin", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Raphael", "label": "Raphael", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Beethoven", "label": "Beethoven", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Countess Vronskaya", "label": "Countess Vronskaya", "shape": "dot", "size": 5}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Betsy", "label": "Betsy", "shape": "dot", "size": 17}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Tverskaya", "label": "Tverskaya", "shape": "dot", "size": 5}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Prince Kuzovlev", "label": "Prince Kuzovlev", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mahotin", "label": "Mahotin", "shape": "dot", "size": 6}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Stremov", "label": "Stremov", "shape": "dot", "size": 6}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Liza Merkalova", "label": "Liza Merkalova", "shape": "dot", "size": 8}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Prince Kaluzhsky", "label": "Prince Kaluzhsky", "shape": "dot", "size": 6}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Sappho", "label": "Sappho", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Vaska", "label": "Vaska", "shape": "dot", "size": 7}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Rolandak", "label": "Rolandak", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Edwarde", "label": "Edwarde", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Annie", "label": "Annie", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Countess", "label": "Countess", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Varya", "label": "Varya", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Vorkuev", "label": "Vorkuev", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Volgarinov", "label": "Volgarinov", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Hannah", "label": "Hannah", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Gambetta", "label": "Gambetta", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Princess Sorokina", "label": "Princess Sorokina", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Komissarov", "label": "Komissarov", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Marya Borissovna", "label": "Marya Borissovna", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Alexander Nevsky", "label": "Alexander Nevsky", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Landau", "label": "Landau", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mademoiselle Linon", "label": "Mademoiselle Linon", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mlle", "label": "Mlle", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Countess Nordston", "label": "Countess Nordston", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Madame Stahl", "label": "Madame Stahl", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Petrov", "label": "Petrov", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Anna Pavlovna", "label": "Anna Pavlovna", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Aline Stahl", "label": "Aline Stahl", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Lieschen", "label": "Lieschen", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Dunyasha", "label": "Dunyasha", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Charles", "label": "Charles", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Marya Dmitrievna", "label": "Marya Dmitrievna", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Count Siniavin", "label": "Count Siniavin", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Rebecca", "label": "Rebecca", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Stepan", "label": "Stepan", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Bonina", "label": "Bonina", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Prokofy", "label": "Prokofy", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Kritsky", "label": "Kritsky", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Vanya", "label": "Vanya", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Ignat", "label": "Ignat", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Pava", "label": "Pava", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mishka", "label": "Mishka", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Tit", "label": "Tit", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Ivan Parmenov", "label": "Ivan Parmenov", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Peter", "label": "Peter", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Spencer", "label": "Spencer", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Shuraev", "label": "Shuraev", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Parfen Denisitch", "label": "Parfen Denisitch", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Krak", "label": "Krak", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Malthus", "label": "Malthus", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Gretchen", "label": "Gretchen", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Snetkov", "label": "Snetkov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Metrov", "label": "Metrov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Bach", "label": "Bach", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Gagin", "label": "Gagin", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Sokolov", "label": "Sokolov", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Pasha", "label": "Pasha", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Schopenhauer", "label": "Schopenhauer", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Terenty", "label": "Terenty", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Petritsky", "label": "Petritsky", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Shilton", "label": "Shilton", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Kamerovsky", "label": "Kamerovsky", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Laura", "label": "Laura", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Prince Kedrov", "label": "Prince Kedrov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Frou-Frou", "label": "Frou-Frou", "shape": "dot", "size": 4}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Gladiator", "label": "Gladiator", "shape": "dot", "size": 3}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Alexander Vronsky", "label": "Alexander Vronsky", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Venovsky", "label": "Venovsky", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Demin", "label": "Demin", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Stepan Vasilyevich", "label": "Stepan Vasilyevich", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Milan", "label": "Milan", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mariette", "label": "Mariette", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Sitnikov", "label": "Sitnikov", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Berkoot", "label": "Berkoot", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Berkoshov", "label": "Berkoshov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Buzulukov", "label": "Buzulukov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Claire", "label": "Claire", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Volkov", "label": "Volkov", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Fertinghof", "label": "Fertinghof", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Madame Maltishtcheva", "label": "Madame Maltishtcheva", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Mitin", "label": "Mitin", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Yermil", "label": "Yermil", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Plato", "label": "Plato", "shape": "dot", "size": 1}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Spinoza", "label": "Spinoza", "shape": "dot", "size": 2}, {"color": "#97c2fc", "font": {"color": "white"}, "id": "Kant", "label": "Kant", "shape": "dot", "size": 2}]);
+                  edges = new vis.DataSet([{"from": "Alabin", "to": "Stiva", "value": 1, "width": 1}, {"from": "Stiva", "to": "Anna", "value": 96, "width": 1}, {"from": "Stiva", "to": "Dolly", "value": 18, "width": 1}, {"from": "Stiva", "to": "Kitty", "value": 79, "width": 1}, {"from": "Stiva", "to": "Vronsky", "value": 26, "width": 1}, {"from": "Stiva", "to": "Krivin", "value": 4, "width": 1}, {"from": "Stiva", "to": "Levin", "value": 65, "width": 1}, {"from": "Stiva", "to": "Laska", "value": 8, "width": 1}, {"from": "Stiva", "to": "Ryabinin", "value": 4, "width": 1}, {"from": "Stiva", "to": "Grisha", "value": 7, "width": 1}, {"from": "Stiva", "to": "Varenka", "value": 6, "width": 1}, {"from": "Stiva", "to": "Veslovsky", "value": 9, "width": 1}, {"from": "Stiva", "to": "Masha", "value": 5, "width": 1}, {"from": "Stiva", "to": "Katerina Pavlovna", "value": 6, "width": 1}, {"from": "Stiva", "to": "Varvara", "value": 4, "width": 1}, {"from": "Stiva", "to": "Arseny", "value": 6, "width": 1}, {"from": "Stiva", "to": "Yashvin", "value": 12, "width": 1}, {"from": "Stiva", "to": "Mitya", "value": 5, "width": 1}, {"from": "Grisha", "to": "Tanya", "value": 63, "width": 1}, {"from": "Grisha", "to": "Anna", "value": 24, "width": 1}, {"from": "Grisha", "to": "Kitty", "value": 12, "width": 1}, {"from": "Grisha", "to": "Lily", "value": 11, "width": 1}, {"from": "Grisha", "to": "Dolly", "value": 25, "width": 1}, {"from": "Grisha", "to": "Brownie", "value": 5, "width": 1}, {"from": "Grisha", "to": "Levin", "value": 80, "width": 1}, {"from": "Grisha", "to": "Varenka", "value": 16, "width": 1}, {"from": "Grisha", "to": "Masha", "value": 12, "width": 1}, {"from": "Grisha", "to": "Veslovsky", "value": 12, "width": 1}, {"from": "Tanya", "to": "Miss Hoole", "value": 5, "width": 1}, {"from": "Tanya", "to": "Anna", "value": 14, "width": 1}, {"from": "Tanya", "to": "Seryozha", "value": 9, "width": 1}, {"from": "Tanya", "to": "Kitty", "value": 18, "width": 1}, {"from": "Tanya", "to": "Dolly", "value": 35, "width": 1}, {"from": "Tanya", "to": "Masha", "value": 7, "width": 1}, {"from": "Tanya", "to": "Lily", "value": 5, "width": 1}, {"from": "Tanya", "to": "Levin", "value": 22, "width": 1}, {"from": "Tanya", "to": "Varenka", "value": 4, "width": 1}, {"from": "Tanya", "to": "Katavasov", "value": 17, "width": 1}, {"from": "Miss Hoole", "to": "Anna", "value": 3, "width": 1}, {"from": "Anna", "to": "Karenin", "value": 31, "width": 1}, {"from": "Anna", "to": "Vronsky", "value": 1214, "width": 1}, {"from": "Anna", "to": "Kitty", "value": 365, "width": 1}, {"from": "Anna", "to": "Dolly", "value": 333, "width": 1}, {"from": "Anna", "to": "Seryozha", "value": 113, "width": 1}, {"from": "Anna", "to": "Krivin", "value": 11, "width": 1}, {"from": "Anna", "to": "Levin", "value": 123, "width": 1}, {"from": "Anna", "to": "Annushka", "value": 99, "width": 1}, {"from": "Anna", "to": "Pravdin", "value": 4, "width": 1}, {"from": "Anna", "to": "Raphael", "value": 2, "width": 1}, {"from": "Anna", "to": "Beethoven", "value": 2, "width": 1}, {"from": "Anna", "to": "Countess Vronskaya", "value": 5, "width": 1}, {"from": "Anna", "to": "Betsy", "value": 276, "width": 1}, {"from": "Anna", "to": "Tverskaya", "value": 44, "width": 1}, {"from": "Anna", "to": "Prince Kuzovlev", "value": 6, "width": 1}, {"from": "Anna", "to": "Mahotin", "value": 5, "width": 1}, {"from": "Anna", "to": "Stremov", "value": 53, "width": 1}, {"from": "Anna", "to": "Liza Merkalova", "value": 59, "width": 1}, {"from": "Anna", "to": "Masha", "value": 4, "width": 1}, {"from": "Anna", "to": "Prince Kaluzhsky", "value": 7, "width": 1}, {"from": "Anna", "to": "Sappho", "value": 21, "width": 1}, {"from": "Anna", "to": "Vaska", "value": 10, "width": 1}, {"from": "Anna", "to": "Rolandak", "value": 3, "width": 1}, {"from": "Anna", "to": "Edwarde", "value": 3, "width": 1}, {"from": "Anna", "to": "Annie", "value": 27, "width": 1}, {"from": "Anna", "to": "Countess", "value": 7, "width": 1}, {"from": "Anna", "to": "Varya", "value": 10, "width": 1}, {"from": "Anna", "to": "Yashvin", "value": 70, "width": 1}, {"from": "Anna", "to": "Varvara", "value": 65, "width": 1}, {"from": "Anna", "to": "Varenka", "value": 6, "width": 1}, {"from": "Anna", "to": "Veslovsky", "value": 108, "width": 1}, {"from": "Anna", "to": "Vorkuev", "value": 25, "width": 1}, {"from": "Anna", "to": "Volgarinov", "value": 1, "width": 1}, {"from": "Anna", "to": "Hannah", "value": 6, "width": 1}, {"from": "Anna", "to": "Gambetta", "value": 2, "width": 1}, {"from": "Anna", "to": "Princess Sorokina", "value": 1, "width": 1}, {"from": "Karenin", "to": "Vronsky", "value": 12, "width": 1}, {"from": "Karenin", "to": "Stremov", "value": 27, "width": 1}, {"from": "Karenin", "to": "Levin", "value": 25, "width": 1}, {"from": "Karenin", "to": "Kitty", "value": 33, "width": 1}, {"from": "Karenin", "to": "Dolly", "value": 26, "width": 1}, {"from": "Karenin", "to": "Seryozha", "value": 2, "width": 1}, {"from": "Karenin", "to": "Komissarov", "value": 16, "width": 1}, {"from": "Karenin", "to": "Marya Borissovna", "value": 2, "width": 1}, {"from": "Karenin", "to": "Alexander Nevsky", "value": 9, "width": 1}, {"from": "Karenin", "to": "Countess", "value": 6, "width": 1}, {"from": "Karenin", "to": "Landau", "value": 14, "width": 1}, {"from": "Kitty", "to": "Levin", "value": 1352, "width": 1}, {"from": "Kitty", "to": "Dolly", "value": 117, "width": 1}, {"from": "Kitty", "to": "Mademoiselle Linon", "value": 6, "width": 1}, {"from": "Kitty", "to": "Mlle", "value": 6, "width": 1}, {"from": "Kitty", "to": "Vronsky", "value": 270, "width": 1}, {"from": "Kitty", "to": "Countess Nordston", "value": 79, "width": 1}, {"from": "Kitty", "to": "Masha", "value": 84, "width": 1}, {"from": "Kitty", "to": "Countess Vronskaya", "value": 3, "width": 1}, {"from": "Kitty", "to": "Krivin", "value": 6, "width": 1}, {"from": "Kitty", "to": "Betsy", "value": 8, "width": 1}, {"from": "Kitty", "to": "Laska", "value": 6, "width": 1}, {"from": "Kitty", "to": "Madame Stahl", "value": 147, "width": 1}, {"from": "Kitty", "to": "Varenka", "value": 637, "width": 1}, {"from": "Kitty", "to": "Petrov", "value": 31, "width": 1}, {"from": "Kitty", "to": "Anna Pavlovna", "value": 47, "width": 1}, {"from": "Kitty", "to": "Aline Stahl", "value": 4, "width": 1}, {"from": "Kitty", "to": "Lieschen", "value": 6, "width": 1}, {"from": "Kitty", "to": "Dunyasha", "value": 15, "width": 1}, {"from": "Kitty", "to": "Charles", "value": 6, "width": 1}, {"from": "Kitty", "to": "Marya Dmitrievna", "value": 3, "width": 1}, {"from": "Kitty", "to": "Count Siniavin", "value": 16, "width": 1}, {"from": "Kitty", "to": "Rebecca", "value": 8, "width": 1}, {"from": "Kitty", "to": "Veslovsky", "value": 38, "width": 1}, {"from": "Kitty", "to": "Marya Borissovna", "value": 6, "width": 1}, {"from": "Kitty", "to": "Katavasov", "value": 33, "width": 1}, {"from": "Kitty", "to": "Arseny", "value": 10, "width": 1}, {"from": "Kitty", "to": "Seryozha", "value": 4, "width": 1}, {"from": "Kitty", "to": "Mitya", "value": 40, "width": 1}, {"from": "Levin", "to": "Dolly", "value": 260, "width": 1}, {"from": "Levin", "to": "Mademoiselle Linon", "value": 36, "width": 1}, {"from": "Levin", "to": "Mlle", "value": 2, "width": 1}, {"from": "Levin", "to": "Stepan", "value": 48, "width": 1}, {"from": "Levin", "to": "Bonina", "value": 3, "width": 1}, {"from": "Levin", "to": "Vronsky", "value": 485, "width": 1}, {"from": "Levin", "to": "Countess Nordston", "value": 67, "width": 1}, {"from": "Levin", "to": "Masha", "value": 148, "width": 1}, {"from": "Levin", "to": "Prokofy", "value": 2, "width": 1}, {"from": "Levin", "to": "Kritsky", "value": 8, "width": 1}, {"from": "Levin", "to": "Vanya", "value": 5, "width": 1}, {"from": "Levin", "to": "Ignat", "value": 10, "width": 1}, {"from": "Levin", "to": "Laska", "value": 193, "width": 1}, {"from": "Levin", "to": "Pava", "value": 31, "width": 1}, {"from": "Levin", "to": "Mishka", "value": 34, "width": 1}, {"from": "Levin", "to": "Ryabinin", "value": 53, "width": 1}, {"from": "Levin", "to": "Varenka", "value": 78, "width": 1}, {"from": "Levin", "to": "Tit", "value": 133, "width": 1}, {"from": "Levin", "to": "Ivan Parmenov", "value": 9, "width": 1}, {"from": "Levin", "to": "Peter", "value": 2, "width": 1}, {"from": "Levin", "to": "Spencer", "value": 14, "width": 1}, {"from": "Levin", "to": "Shuraev", "value": 18, "width": 1}, {"from": "Levin", "to": "Parfen Denisitch", "value": 5, "width": 1}, {"from": "Levin", "to": "Katavasov", "value": 279, "width": 1}, {"from": "Levin", "to": "Dunyasha", "value": 13, "width": 1}, {"from": "Levin", "to": "Charles", "value": 3, "width": 1}, {"from": "Levin", "to": "Marya Dmitrievna", "value": 5, "width": 1}, {"from": "Levin", "to": "Rebecca", "value": 6, "width": 1}, {"from": "Levin", "to": "Veslovsky", "value": 280, "width": 1}, {"from": "Levin", "to": "Krak", "value": 19, "width": 1}, {"from": "Levin", "to": "Malthus", "value": 5, "width": 1}, {"from": "Levin", "to": "Gretchen", "value": 4, "width": 1}, {"from": "Levin", "to": "Vaska", "value": 4, "width": 1}, {"from": "Levin", "to": "Snetkov", "value": 46, "width": 1}, {"from": "Levin", "to": "Arseny", "value": 20, "width": 1}, {"from": "Levin", "to": "Metrov", "value": 24, "width": 1}, {"from": "Levin", "to": "Mahotin", "value": 11, "width": 1}, {"from": "Levin", "to": "Bach", "value": 6, "width": 1}, {"from": "Levin", "to": "Gagin", "value": 42, "width": 1}, {"from": "Levin", "to": "Yashvin", "value": 10, "width": 1}, {"from": "Levin", "to": "Vorkuev", "value": 54, "width": 1}, {"from": "Levin", "to": "Sokolov", "value": 8, "width": 1}, {"from": "Levin", "to": "Pasha", "value": 7, "width": 1}, {"from": "Levin", "to": "Mitya", "value": 33, "width": 1}, {"from": "Levin", "to": "Schopenhauer", "value": 2, "width": 1}, {"from": "Levin", "to": "Madame Stahl", "value": 13, "width": 1}, {"from": "Dolly", "to": "Countess Vronskaya", "value": 10, "width": 1}, {"from": "Dolly", "to": "Brownie", "value": 6, "width": 1}, {"from": "Dolly", "to": "Terenty", "value": 5, "width": 1}, {"from": "Dolly", "to": "Masha", "value": 24, "width": 1}, {"from": "Dolly", "to": "Veslovsky", "value": 7, "width": 1}, {"from": "Dolly", "to": "Vronsky", "value": 52, "width": 1}, {"from": "Dolly", "to": "Varvara", "value": 21, "width": 1}, {"from": "Dolly", "to": "Annushka", "value": 21, "width": 1}, {"from": "Dolly", "to": "Seryozha", "value": 7, "width": 1}, {"from": "Dolly", "to": "Annie", "value": 5, "width": 1}, {"from": "Dolly", "to": "Arseny", "value": 4, "width": 1}, {"from": "Mademoiselle Linon", "to": "Mlle", "value": 15, "width": 1}, {"from": "Vronsky", "to": "Countess Nordston", "value": 30, "width": 1}, {"from": "Vronsky", "to": "Countess Vronskaya", "value": 17, "width": 1}, {"from": "Vronsky", "to": "Seryozha", "value": 40, "width": 1}, {"from": "Vronsky", "to": "Petritsky", "value": 153, "width": 1}, {"from": "Vronsky", "to": "Shilton", "value": 5, "width": 1}, {"from": "Vronsky", "to": "Kamerovsky", "value": 22, "width": 1}, {"from": "Vronsky", "to": "Rebecca", "value": 6, "width": 1}, {"from": "Vronsky", "to": "Laura", "value": 2, "width": 1}, {"from": "Vronsky", "to": "Betsy", "value": 168, "width": 1}, {"from": "Vronsky", "to": "Tverskaya", "value": 14, "width": 1}, {"from": "Vronsky", "to": "Prince Kedrov", "value": 10, "width": 1}, {"from": "Vronsky", "to": "Ryabinin", "value": 1, "width": 1}, {"from": "Vronsky", "to": "Yashvin", "value": 232, "width": 1}, {"from": "Vronsky", "to": "Mahotin", "value": 104, "width": 1}, {"from": "Vronsky", "to": "Frou-Frou", "value": 98, "width": 1}, {"from": "Vronsky", "to": "Gladiator", "value": 69, "width": 1}, {"from": "Vronsky", "to": "Alexander Vronsky", "value": 3, "width": 1}, {"from": "Vronsky", "to": "Prince Kuzovlev", "value": 40, "width": 1}, {"from": "Vronsky", "to": "Liza Merkalova", "value": 6, "width": 1}, {"from": "Vronsky", "to": "Venovsky", "value": 22, "width": 1}, {"from": "Vronsky", "to": "Varya", "value": 22, "width": 1}, {"from": "Vronsky", "to": "Rolandak", "value": 5, "width": 1}, {"from": "Vronsky", "to": "Demin", "value": 7, "width": 1}, {"from": "Vronsky", "to": "Stepan Vasilyevich", "value": 4, "width": 1}, {"from": "Vronsky", "to": "Annie", "value": 5, "width": 1}, {"from": "Vronsky", "to": "Varvara", "value": 29, "width": 1}, {"from": "Vronsky", "to": "Princess Sorokina", "value": 5, "width": 1}, {"from": "Vronsky", "to": "Stremov", "value": 7, "width": 1}, {"from": "Vronsky", "to": "Varenka", "value": 6, "width": 1}, {"from": "Vronsky", "to": "Veslovsky", "value": 33, "width": 1}, {"from": "Vronsky", "to": "Snetkov", "value": 14, "width": 1}, {"from": "Vronsky", "to": "Marya Borissovna", "value": 12, "width": 1}, {"from": "Vronsky", "to": "Vorkuev", "value": 10, "width": 1}, {"from": "Vronsky", "to": "Hannah", "value": 2, "width": 1}, {"from": "Vronsky", "to": "Annushka", "value": 10, "width": 1}, {"from": "Vronsky", "to": "Gambetta", "value": 2, "width": 1}, {"from": "Vronsky", "to": "Katavasov", "value": 8, "width": 1}, {"from": "Vronsky", "to": "Milan", "value": 10, "width": 1}, {"from": "Masha", "to": "Kritsky", "value": 11, "width": 1}, {"from": "Masha", "to": "Brownie", "value": 3, "width": 1}, {"from": "Masha", "to": "Betsy", "value": 4, "width": 1}, {"from": "Masha", "to": "Varenka", "value": 12, "width": 1}, {"from": "Countess Vronskaya", "to": "Betsy", "value": 5, "width": 1}, {"from": "Seryozha", "to": "Annushka", "value": 11, "width": 1}, {"from": "Seryozha", "to": "Mariette", "value": 16, "width": 1}, {"from": "Seryozha", "to": "Betsy", "value": 4, "width": 1}, {"from": "Seryozha", "to": "Tverskaya", "value": 5, "width": 1}, {"from": "Seryozha", "to": "Sitnikov", "value": 10, "width": 1}, {"from": "Seryozha", "to": "Countess", "value": 6, "width": 1}, {"from": "Seryozha", "to": "Alexander Nevsky", "value": 10, "width": 1}, {"from": "Ignat", "to": "Pava", "value": 11, "width": 1}, {"from": "Pava", "to": "Berkoot", "value": 6, "width": 1}, {"from": "Laska", "to": "Krak", "value": 21, "width": 1}, {"from": "Laska", "to": "Veslovsky", "value": 12, "width": 1}, {"from": "Annushka", "to": "Betsy", "value": 9, "width": 1}, {"from": "Raphael", "to": "Beethoven", "value": 6, "width": 1}, {"from": "Petritsky", "to": "Shilton", "value": 6, "width": 1}, {"from": "Petritsky", "to": "Kamerovsky", "value": 11, "width": 1}, {"from": "Petritsky", "to": "Berkoshov", "value": 4, "width": 1}, {"from": "Petritsky", "to": "Buzulukov", "value": 5, "width": 1}, {"from": "Petritsky", "to": "Prince Kedrov", "value": 12, "width": 1}, {"from": "Petritsky", "to": "Claire", "value": 2, "width": 1}, {"from": "Petritsky", "to": "Yashvin", "value": 33, "width": 1}, {"from": "Petritsky", "to": "Mahotin", "value": 2, "width": 1}, {"from": "Petritsky", "to": "Volkov", "value": 5, "width": 1}, {"from": "Rebecca", "to": "Berkoshov", "value": 5, "width": 1}, {"from": "Laura", "to": "Fertinghof", "value": 6, "width": 1}, {"from": "Fertinghof", "to": "Buzulukov", "value": 4, "width": 1}, {"from": "Betsy", "to": "Claire", "value": 2, "width": 1}, {"from": "Betsy", "to": "Madame Maltishtcheva", "value": 5, "width": 1}, {"from": "Betsy", "to": "Liza Merkalova", "value": 10, "width": 1}, {"from": "Betsy", "to": "Tverskaya", "value": 9, "width": 1}, {"from": "Betsy", "to": "Mishka", "value": 4, "width": 1}, {"from": "Betsy", "to": "Prince Kaluzhsky", "value": 6, "width": 1}, {"from": "Betsy", "to": "Vaska", "value": 4, "width": 1}, {"from": "Betsy", "to": "Sappho", "value": 13, "width": 1}, {"from": "Betsy", "to": "Stremov", "value": 11, "width": 1}, {"from": "Betsy", "to": "Varvara", "value": 3, "width": 1}, {"from": "Tverskaya", "to": "Liza Merkalova", "value": 5, "width": 1}, {"from": "Mishka", "to": "Prince Kaluzhsky", "value": 6, "width": 1}, {"from": "Yashvin", "to": "Volkov", "value": 3, "width": 1}, {"from": "Yashvin", "to": "Frou-Frou", "value": 4, "width": 1}, {"from": "Yashvin", "to": "Venovsky", "value": 6, "width": 1}, {"from": "Yashvin", "to": "Varvara", "value": 6, "width": 1}, {"from": "Yashvin", "to": "Gagin", "value": 5, "width": 1}, {"from": "Mahotin", "to": "Gladiator", "value": 8, "width": 1}, {"from": "Mahotin", "to": "Frou-Frou", "value": 12, "width": 1}, {"from": "Frou-Frou", "to": "Gladiator", "value": 9, "width": 1}, {"from": "Madame Stahl", "to": "Varenka", "value": 114, "width": 1}, {"from": "Varenka", "to": "Petrov", "value": 6, "width": 1}, {"from": "Varenka", "to": "Anna Pavlovna", "value": 18, "width": 1}, {"from": "Varenka", "to": "Aline Stahl", "value": 3, "width": 1}, {"from": "Varenka", "to": "Lieschen", "value": 1, "width": 1}, {"from": "Petrov", "to": "Anna Pavlovna", "value": 8, "width": 1}, {"from": "Petrov", "to": "Mitin", "value": 6, "width": 1}, {"from": "Tit", "to": "Vaska", "value": 5, "width": 1}, {"from": "Vaska", "to": "Yermil", "value": 6, "width": 1}, {"from": "Vaska", "to": "Sappho", "value": 10, "width": 1}, {"from": "Vaska", "to": "Prince Kaluzhsky", "value": 5, "width": 1}, {"from": "Brownie", "to": "Lily", "value": 4, "width": 1}, {"from": "Lily", "to": "Terenty", "value": 3, "width": 1}, {"from": "Liza Merkalova", "to": "Prince Kaluzhsky", "value": 12, "width": 1}, {"from": "Liza Merkalova", "to": "Stremov", "value": 33, "width": 1}, {"from": "Liza Merkalova", "to": "Sappho", "value": 11, "width": 1}, {"from": "Liza Merkalova", "to": "Veslovsky", "value": 3, "width": 1}, {"from": "Prince Kaluzhsky", "to": "Stremov", "value": 6, "width": 1}, {"from": "Varya", "to": "Princess Sorokina", "value": 5, "width": 1}, {"from": "Spencer", "to": "Katavasov", "value": 2, "width": 1}, {"from": "Katavasov", "to": "Metrov", "value": 17, "width": 1}, {"from": "Katavasov", "to": "Mitya", "value": 5, "width": 1}, {"from": "Annie", "to": "Varvara", "value": 4, "width": 1}, {"from": "Countess", "to": "Landau", "value": 15, "width": 1}, {"from": "Varvara", "to": "Veslovsky", "value": 11, "width": 1}, {"from": "Veslovsky", "to": "Krak", "value": 17, "width": 1}, {"from": "Veslovsky", "to": "Malthus", "value": 5, "width": 1}, {"from": "Veslovsky", "to": "Gretchen", "value": 2, "width": 1}, {"from": "Krak", "to": "Malthus", "value": 1, "width": 1}, {"from": "Plato", "to": "Spinoza", "value": 6, "width": 1}, {"from": "Spinoza", "to": "Kant", "value": 6, "width": 1}, {"from": "Kant", "to": "Schopenhauer", "value": 6, "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+                      network.on("stabilizationProgress", function(params) {
+                          document.getElementById('loadingBar').removeAttribute("style");
+                          var maxWidth = 496;
+                          var minWidth = 20;
+                          var widthFactor = params.iterations/params.total;
+                          var width = Math.max(minWidth,maxWidth * widthFactor);
+                          document.getElementById('bar').style.width = width + 'px';
+                          document.getElementById('text').innerHTML = Math.round(widthFactor*100) + '%';
+                      });
+                      network.once("stabilizationIterationsDone", function() {
+                          document.getElementById('text').innerHTML = '100%';
+                          document.getElementById('bar').style.width = '496px';
+                          document.getElementById('loadingBar').style.opacity = 0;
+                          // really clean the dom element
+                          setTimeout(function () {document.getElementById('loadingBar').style.display = 'none';}, 500);
+                      });
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
