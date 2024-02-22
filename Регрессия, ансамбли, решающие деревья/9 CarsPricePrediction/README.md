@@ -11,7 +11,7 @@ It was decided to test this approach in Kazakhstan division at the first place.
 
 ### Problem description​
 
-You are provided with already collected data in a format of csv file. In the first row there are column names; all the other rows contain data, each row corresponding to one publication on ![Kolesa.kz](https://kolesa.kz/) website. The columns are separated with semicolon.​
+You are provided with already collected data in a format of csv file. In the first row there are column names; all the other rows contain data, each row corresponding to one publication on [Kolesa.kz](https://kolesa.kz/) website. The columns are separated with semicolon.​
 
 ​You are asked to do the following:​
 
