@@ -1,17 +1,17 @@
-## The wheel of data
+# The wheel of data
 
-### Brief introduction​
+## Brief introduction​
 
-​Comapany owns a considerable amount of corporate cars and it wants to be able to calculate their total value for accounting purposes. To do that the company wants to: 
+​Comapany owns a considerable amount of corporate cars and it wants to be able to calculate their total value for accounting purposes. To do that the company wants to
 
 1) have a model, which will predict the price of a car (single at a time) based on its input parameters; 
 2) Estimate cars economical depreciation function (how do they lose value over time).​
 
 It was decided to test this approach in Kazakhstan division at the first place.
 
-### Problem description​
+## Problem description​
 
-You are provided with already collected data in a format of csv file. In the first row there are column names; all the other rows contain data, each row corresponding to one publication on [Kolesa.kz](https://kolesa.kz/) website. The columns are separated with semicolon.​
+In the first row there are column names; all the other rows contain data, each row corresponding to one publication on [Kolesa.kz](https://kolesa.kz/) website. The columns are separated with semicolon.​
 
 ​You are asked to do the following:​
 
@@ -21,9 +21,9 @@ You are provided with already collected data in a format of csv file. In the fir
 
 ​You should provide a company with the results of your work in form of a presentation in PowerPoint or a Jupyter-Notebook. You should illustrate how you tested different models, which of them you chose (and why), what metrics you used, what parameters you decided to use and explain what conclusions you made about the depreciation.​
 
-​​### Using models
+​​## Using models
 
-- Baseline LinReg
-- Baseline CatBoost
-- Baseline LightGBM
-- LightGMB + Optuna (best)
+  - Baseline LinReg
+  - Baseline CatBoost
+  - Baseline LightGBM
+  - LightGMB + Optuna (best)
